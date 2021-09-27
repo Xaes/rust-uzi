@@ -1,0 +1,14 @@
+## Builds & Outputs.
+
+/target
+
+# IDE's & Code Editors.
+
+.vscode
+.vscode/
+.idea
+.idea/
+
+# Logging & Errors.
+
+*.log

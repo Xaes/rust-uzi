@@ -1,0 +1,13 @@
+[package]
+name = "rust-uzi"
+description = "A load testing tool for API's made in Rust for measuring Web API's performance. It provides a flexible facility for generating various HTTP workloads."
+version = "0.1.0"
+edition = "2018"
+readme = "README.md"
+authors = ["Diego Balmaceda <diego@xaes.dev>"]
+repository = "https://gitlab.com/xaesdesign/rust-uzi"
+homepage = "https://gitlab.com/xaesdesign/rust-uzi"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
