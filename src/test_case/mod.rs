@@ -53,22 +53,22 @@ impl TestCase {
                     .build()
                     .unwrap();
 
-                println!("Spawning Request: ({:?})", uri);
+                info!("Spawning Request: ({:?})", uri);
 
                 let task = tokio::spawn(async move {
                     match tokio::time::timeout(timeout_clone, client_clone.get(uri)).await {
                         Ok(result) => match result {
-                            Ok(_) => println!(
+                            Ok(_) => info!(
                                 "Request #{} to {} was successful.",
                                 run_index, endpoint_clone
                             ),
                             Err(err) => {
-                                eprintln!("A problem ocurred during the request: {}", err);
-                                println!("Request #{} to {} failed.", run_index, endpoint_clone)
+                                error!("A problem ocurred during the request: {}", err);
+                                info!("Request #{} to {} failed.", run_index, endpoint_clone)
                             }
                         },
                         Err(_) => {
-                            eprintln!(
+                            error!(
                                 "A problem ocurred during the request: Timeout exceeded ({:?}).",
                                 timeout_clone
                             );

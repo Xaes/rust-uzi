@@ -13,3 +13,12 @@ A load testing tool for API's made in Rust for measuring Web API's performance. 
 - Test Cases.
 - HTTP 1.1 / 2.0 Support.
 - JSON Outputs.
+
+
+## Tests
+
+A simple concurrent test is already implemented. The test consists on creating a Warp Server, then, UZI makes GET requests to the three main endpoints. To execute the tests (with logs) use the following command:
+
+```bash
+RUST_LOG="rust_uzi::test_case=info,warp:test=info" cargo test multi_thread_api_test -- --nocapture
+```

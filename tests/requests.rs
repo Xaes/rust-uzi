@@ -47,11 +47,12 @@ fn get_routes() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejecti
     all_success
         .or(all_denied)
         .or(mixed_responses)
-        .with(warp::filters::log::log("api-test"))
+        .with(warp::filters::log::log("warp:test"))
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn multi_thread_api_test() {
+    pretty_env_logger::init();
     let (shutdown_sender, shutdown_receiver) = channel::<()>();
     let address: SocketAddr = "0.0.0.0:8000".parse().unwrap();
 
