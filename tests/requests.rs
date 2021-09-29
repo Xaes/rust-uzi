@@ -1,5 +1,6 @@
 extern crate rust_uzi;
 
+use futures::channel::oneshot::channel;
 use hyper::Method;
 use rand::Rng;
 use rust_uzi::test_case::{Case, TestCase};
@@ -7,24 +8,21 @@ use std::net::SocketAddr;
 use warp::Filter;
 
 fn get_case() -> TestCase {
-    let mut case = TestCase::new(None);
-
-    // Defining Cases.
-
-    case.cases.insert(
-        "first_case",
-        Case::new("0.0.0.0:8000", "/all-success", Some(Method::GET)),
-    );
-    case.cases.insert(
-        "second_case",
-        Case::new("0.0.0.0:8000", "/all-denied", Some(Method::GET)),
-    );
-    case.cases.insert(
-        "third_case",
-        Case::new("0.0.0.0:8000", "/mixed", Some(Method::GET)),
-    );
-
-    case
+    TestCase::builder("test_case")
+        .case(
+            "first_case",
+            Case::new("0.0.0.0:8000", "/all-success", Some(Method::GET)),
+        )
+        .case(
+            "second_case",
+            Case::new("0.0.0.0:8000", "/all-denied", Some(Method::GET)),
+        )
+        .case(
+            "third_case",
+            Case::new("0.0.0.0:8000", "/mixed", Some(Method::GET)),
+        )
+        .iters(100)
+        .build()
 }
 
 fn get_routes() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
@@ -52,24 +50,20 @@ fn get_routes() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejecti
         .with(warp::filters::log::log("api-test"))
 }
 
-#[tokio::test]
-async fn single_thread_api_test() {
-    let address: SocketAddr = "0.0.0.0:8000".parse().unwrap();
-
-    tokio::spawn(async move {
-        warp::serve(get_routes()).run(address).await;
-    });
-
-    get_case().run().await;
-}
-
 #[tokio::test(flavor = "multi_thread")]
 async fn multi_thread_api_test() {
-    let address: SocketAddr = "0.0.0.0:8001".parse().unwrap();
+    let (shutdown_sender, shutdown_receiver) = channel::<()>();
+    let address: SocketAddr = "0.0.0.0:8000".parse().unwrap();
 
-    tokio::spawn(async move {
-        warp::serve(get_routes()).run(address).await;
-    });
+    println!("Initialized Test Server on: {}", address);
+    let (_, server_future) =
+        warp::serve(get_routes()).bind_with_graceful_shutdown(address, async {
+            shutdown_receiver.await.ok();
+        });
+
+    tokio::spawn(server_future);
 
     get_case().run().await;
+    println!("Shutting down test API...");
+    shutdown_sender.send(()).unwrap();
 }
