@@ -1,7 +1,12 @@
+mod test_result;
+
 use hyper::{Client, Method, Uri};
 use std::collections::HashMap;
 use std::default::Default;
-use std::time::Duration;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+use test_result::TestResult;
+use time::OffsetDateTime;
 use tokio::task::JoinHandle;
 
 #[derive(Debug, Clone)]
@@ -34,17 +39,23 @@ impl TestCase {
         TestCaseBuilder::new(name)
     }
 
-    pub async fn run(self) {
+    pub async fn run(self) -> TestResult {
+        let duration = Instant::now();
+        let start_time = OffsetDateTime::now_local().unwrap_or(OffsetDateTime::now_utc());
+        let successful_requests = Arc::new(Mutex::new(0));
+        let failed_requests = Arc::new(Mutex::new(0));
         let mut tasks: Vec<JoinHandle<()>> = Vec::new();
         let client = Client::new();
 
         // Spawning Tasks.
 
         self.cases.iter().for_each(|(_, case)| {
-            (0..=self.iterations).into_iter().for_each(|run_index| {
+            (0..self.iterations).into_iter().for_each(|run_index| {
                 let client_clone = client.clone();
                 let endpoint_clone = case.clone().endpoint;
                 let timeout_clone = self.timeout.clone();
+                let successful_requests_count = successful_requests.clone();
+                let failed_requests_count = failed_requests.clone();
 
                 let uri = Uri::builder()
                     .scheme("http")
@@ -58,19 +69,34 @@ impl TestCase {
                 let task = tokio::spawn(async move {
                     match tokio::time::timeout(timeout_clone, client_clone.get(uri)).await {
                         Ok(result) => match result {
-                            Ok(_) => info!(
-                                "Request #{} to {} was successful.",
-                                run_index, endpoint_clone
-                            ),
-                            Err(err) => {
-                                error!("A problem ocurred during the request: {}", err);
-                                info!("Request #{} to {} failed.", run_index, endpoint_clone)
+                            Ok(_) => match result.unwrap().status().is_success() {
+                                true => {
+                                    let mut num = successful_requests_count.lock().unwrap();
+                                    *num += 1;
+
+                                    info!(
+                                        "Request #{} to {} was successful.",
+                                        run_index, endpoint_clone
+                                    );
+                                }
+                                false => {
+                                    let mut num = failed_requests_count.lock().unwrap();
+                                    *num += 1;
+                                    error!("Request #{} to {} failed.", run_index, endpoint_clone);
+                                }
+                            },
+                            Err(_) => {
+                                let mut num = failed_requests_count.lock().unwrap();
+                                *num += 1;
+                                error!("Request #{} to {} failed.", run_index, endpoint_clone)
                             }
                         },
                         Err(_) => {
+                            let mut num = failed_requests_count.lock().unwrap();
+                            *num += 1;
                             error!(
-                                "A problem ocurred during the request: Timeout exceeded ({:?}).",
-                                timeout_clone
+                                "Request #{} to {} failed (timeout).",
+                                run_index, endpoint_clone
                             );
                         }
                     }
@@ -84,6 +110,22 @@ impl TestCase {
 
         for task in tasks {
             task.await.unwrap();
+        }
+
+        let end_time = OffsetDateTime::now_local().unwrap_or(OffsetDateTime::now_utc());
+        let duration = duration.elapsed();
+
+        // Building a Test Result.
+
+        let failed_requests_count = *failed_requests.lock().unwrap();
+        let successful_requests_count = *successful_requests.lock().unwrap();
+
+        TestResult {
+            start_time,
+            end_time,
+            duration,
+            failed_requests: failed_requests_count,
+            successful_requests: successful_requests_count,
         }
     }
 }

@@ -21,7 +21,7 @@ fn get_case() -> TestCase {
             "third_case",
             Case::new("0.0.0.0:8000", "/mixed", Some(Method::GET)),
         )
-        .iters(100)
+        .iters(500)
         .build()
 }
 
@@ -55,8 +55,6 @@ async fn multi_thread_api_test() {
     pretty_env_logger::init();
     let (shutdown_sender, shutdown_receiver) = channel::<()>();
     let address: SocketAddr = "0.0.0.0:8000".parse().unwrap();
-
-    println!("Initialized Test Server on: {}", address);
     let (_, server_future) =
         warp::serve(get_routes()).bind_with_graceful_shutdown(address, async {
             shutdown_receiver.await.ok();
@@ -64,7 +62,7 @@ async fn multi_thread_api_test() {
 
     tokio::spawn(server_future);
 
-    get_case().run().await;
-    println!("Shutting down test API...");
+    let result = get_case().run().await;
     shutdown_sender.send(()).unwrap();
+    println!("{}", result);
 }
