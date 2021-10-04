@@ -73,7 +73,7 @@ impl<'a> TestCase {
                                 }
                                 false => {
                                     builder_clone.register_error(&case_clone);
-                                    error!(
+                                    info!(
                                         "Request #{} to {} failed.",
                                         run_index, case_clone.endpoint
                                     );
@@ -81,12 +81,12 @@ impl<'a> TestCase {
                             },
                             Err(_) => {
                                 builder_clone.register_error(&case_clone);
-                                error!("Request #{} to {} failed.", run_index, case_clone.endpoint)
+                                info!("Request #{} to {} failed.", run_index, case_clone.endpoint)
                             }
                         },
                         Err(_) => {
                             builder_clone.register_error(&case_clone);
-                            error!(
+                            info!(
                                 "Request #{} to {} failed (timeout).",
                                 run_index, case_clone.endpoint
                             );
