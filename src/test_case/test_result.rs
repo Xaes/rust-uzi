@@ -19,25 +19,24 @@ pub struct TestResult {
 impl Display for TestResult {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         let format_description = format_description::parse("[hour]:[minute]:[second]").unwrap();
+        let total_requests = self.failed_requests + self.successful_requests;
+        let duration = self.duration.as_secs_f32();
+        let requests_per_sec = (total_requests as f32) / self.duration.as_secs_f32();
         let start_time = OffsetDateTime::from(self.start_time)
             .format(&format_description)
             .unwrap();
         let end_time = OffsetDateTime::from(self.end_time)
             .format(&format_description)
             .unwrap();
+
+        // Printing Results.
+
         writeln!(f, "[---- TEST RESULTS ----]\n")?;
-        writeln!(
-            f,
-            "[Total Requests Sent]: {}.",
-            self.failed_requests + self.successful_requests
-        )?;
+        writeln!(f, "[Total Requests Sent]: {}.", total_requests)?;
         writeln!(f, "[Number of Fails]: {}.", self.failed_requests)?;
         writeln!(f, "[Number of Successes]: {}.", self.successful_requests)?;
-        writeln!(
-            f,
-            "[Total Time Elapsed]: {:.4} secs.",
-            self.duration.as_secs_f32()
-        )?;
+        writeln!(f, "[Requests per Second]: {} req/sec.", requests_per_sec)?;
+        writeln!(f, "[Total Time Elapsed]: {:.4} secs.", duration)?;
         writeln!(f, "[Start Time]: {}.", start_time)?;
         writeln!(f, "[End Time]: {}.", end_time)
     }
