@@ -1,26 +1,22 @@
 mod test_result;
 
-use hyper::{Client, Method, Uri};
+use hyper::{Client, Uri};
 use std::collections::HashMap;
 use std::default::Default;
 use std::time::Duration;
 use test_result::{TestResult, TestResultBuilder};
 use tokio::task::JoinHandle;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Case {
+    pub id: &'static str,
     pub host: &'static str,
     pub endpoint: &'static str,
-    pub method: Method,
 }
 
 impl Case {
-    pub fn new(host: &'static str, endpoint: &'static str, method: Option<Method>) -> Self {
-        Self {
-            host,
-            endpoint,
-            method: method.unwrap_or(Method::GET),
-        }
+    pub fn new(id: &'static str, host: &'static str, endpoint: &'static str) -> Self {
+        Self { id, host, endpoint }
     }
 }
 
@@ -32,7 +28,7 @@ pub struct TestCase {
     pub timeout: Duration,
 }
 
-impl TestCase {
+impl<'a> TestCase {
     pub fn builder(name: &'static str) -> TestCaseBuilder {
         TestCaseBuilder::new(name)
     }
@@ -51,7 +47,7 @@ impl TestCase {
         self.cases.iter().for_each(|(_, case)| {
             (0..self.iterations).into_iter().for_each(|run_index| {
                 let client_clone = client.clone();
-                let endpoint_clone = case.clone().endpoint;
+                let case_clone = case.clone();
                 let timeout_clone = self.timeout.clone();
                 let mut builder_clone = test_builder.clone();
 
@@ -69,27 +65,30 @@ impl TestCase {
                         Ok(result) => match result {
                             Ok(_) => match result.unwrap().status().is_success() {
                                 true => {
-                                    builder_clone.increment_ok_count();
+                                    builder_clone.register_success(&case_clone);
                                     info!(
                                         "Request #{} to {} was successful.",
-                                        run_index, endpoint_clone
+                                        run_index, case_clone.endpoint
                                     );
                                 }
                                 false => {
-                                    builder_clone.increment_err_count();
-                                    error!("Request #{} to {} failed.", run_index, endpoint_clone);
+                                    builder_clone.register_error(&case_clone);
+                                    error!(
+                                        "Request #{} to {} failed.",
+                                        run_index, case_clone.endpoint
+                                    );
                                 }
                             },
                             Err(_) => {
-                                builder_clone.increment_err_count();
-                                error!("Request #{} to {} failed.", run_index, endpoint_clone)
+                                builder_clone.register_error(&case_clone);
+                                error!("Request #{} to {} failed.", run_index, case_clone.endpoint)
                             }
                         },
                         Err(_) => {
-                            builder_clone.increment_err_count();
+                            builder_clone.register_error(&case_clone);
                             error!(
                                 "Request #{} to {} failed (timeout).",
-                                run_index, endpoint_clone
+                                run_index, case_clone.endpoint
                             );
                         }
                     }
@@ -132,8 +131,8 @@ impl TestCaseBuilder {
         self
     }
 
-    pub fn case(mut self, name: &'static str, case: Case) -> Self {
-        self.cases.insert(name, case);
+    pub fn case(mut self, case: Case) -> Self {
+        self.cases.insert(case.id, case);
         self
     }
 

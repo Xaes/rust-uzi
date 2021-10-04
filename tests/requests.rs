@@ -1,7 +1,6 @@
 extern crate rust_uzi;
 
 use futures::channel::oneshot::channel;
-use hyper::Method;
 use rand::Rng;
 use rust_uzi::test_case::{Case, TestCase};
 use std::net::SocketAddr;
@@ -9,18 +8,9 @@ use warp::Filter;
 
 fn get_case() -> TestCase {
     TestCase::builder("test_case")
-        .case(
-            "first_case",
-            Case::new("0.0.0.0:8000", "/all-success", Some(Method::GET)),
-        )
-        .case(
-            "second_case",
-            Case::new("0.0.0.0:8000", "/all-denied", Some(Method::GET)),
-        )
-        .case(
-            "third_case",
-            Case::new("0.0.0.0:8000", "/mixed", Some(Method::GET)),
-        )
+        .case(Case::new("first_case", "0.0.0.0:8000", "/all-success"))
+        .case(Case::new("second_case", "0.0.0.0:8000", "/all-denied"))
+        .case(Case::new("third_case", "0.0.0.0:8000", "/mixed"))
         .iters(500)
         .build()
 }

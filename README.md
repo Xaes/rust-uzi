@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-A load testing tool for API's made in Rust for measuring Web API's performance. It provides a flexible facility for generating various HTTP workloads.
+A load testing tool for API's made in Rust for measuring Web API's performance. It provides a flexible facility for generating various HTTP workloads. Web requests are made with the [Hyper](https://github.com/hyperium/hyper) (a low-level HTTP Client), so you can expect it to be blazing fast.
 
 ## Features
 
@@ -13,7 +13,6 @@ A load testing tool for API's made in Rust for measuring Web API's performance. 
 - Test Cases.
 - HTTP 1.1 / 2.0 Support.
 - JSON Outputs.
-
 
 ## Tests
 
