@@ -47,8 +47,8 @@ impl<'a> TestCase {
         self.cases.iter().for_each(|(_, case)| {
             (0..self.iterations).into_iter().for_each(|run_index| {
                 let client_clone = client.clone();
-                let case_clone = case.clone();
-                let timeout_clone = self.timeout.clone();
+                let case_clone = *case;
+                let timeout_clone = self.timeout;
                 let mut builder_clone = test_builder.clone();
 
                 let uri = Uri::builder()

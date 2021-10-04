@@ -1,6 +1,6 @@
 use super::Case;
 use std::collections::HashMap;
-use std::convert::From;
+
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -22,10 +22,10 @@ impl Display for TestResult {
         let total_requests = self.failed_requests + self.successful_requests;
         let duration = self.duration.as_secs_f32();
         let requests_per_sec = (total_requests as f32) / self.duration.as_secs_f32();
-        let start_time = OffsetDateTime::from(self.start_time)
+        let start_time = self.start_time
             .format(&format_description)
             .unwrap();
-        let end_time = OffsetDateTime::from(self.end_time)
+        let end_time = self.end_time
             .format(&format_description)
             .unwrap();
 
@@ -83,7 +83,7 @@ impl TestResultBuilder {
                 (*case).success_count += 1;
             })
             .or_insert(CaseResult {
-                case: case.clone(),
+                case: *case,
                 error_count: 0,
                 success_count: 1,
             });
@@ -99,7 +99,7 @@ impl TestResultBuilder {
                 (*case).error_count += 1;
             })
             .or_insert(CaseResult {
-                case: case.clone(),
+                case: *case,
                 error_count: 1,
                 success_count: 0,
             });
@@ -131,7 +131,7 @@ pub struct CaseResult {
 impl std::convert::From<&Case> for CaseResult {
     fn from(case: &Case) -> CaseResult {
         CaseResult {
-            case: case.clone(),
+            case: *case,
             error_count: 0,
             success_count: 0,
         }
