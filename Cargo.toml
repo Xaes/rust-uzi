@@ -15,9 +15,11 @@ test = true
 crate-type = ["lib"]
 
 [dependencies]
+colored = "2.0.0"
 hyper = { version = "0.14.13", features = ["full"] }
 log = "0.4.14"
 pretty_env_logger = "0.4.0"
+prettytable-rs = "0.8.0"
 time = { version = "0.3.3", features = ["formatting", "local-offset"] }
 tokio = { version = "1.12.0", features = ["full"] }
 

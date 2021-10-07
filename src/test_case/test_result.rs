@@ -1,6 +1,7 @@
 use super::Case;
 use std::collections::HashMap;
 
+use colored::*;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -22,23 +23,73 @@ impl Display for TestResult {
         let total_requests = self.failed_requests + self.successful_requests;
         let duration = self.duration.as_secs_f32();
         let requests_per_sec = (total_requests as f32) / self.duration.as_secs_f32();
-        let start_time = self.start_time
-            .format(&format_description)
-            .unwrap();
-        let end_time = self.end_time
-            .format(&format_description)
-            .unwrap();
+        let start_time = self.start_time.format(&format_description).unwrap();
+        let end_time = self.end_time.format(&format_description).unwrap();
 
         // Printing Results.
 
-        writeln!(f, "[---- TEST RESULTS ----]\n")?;
-        writeln!(f, "[Total Requests Sent]: {}.", total_requests)?;
-        writeln!(f, "[Number of Fails]: {}.", self.failed_requests)?;
-        writeln!(f, "[Number of Successes]: {}.", self.successful_requests)?;
-        writeln!(f, "[Requests per Second]: {} req/sec.", requests_per_sec)?;
-        writeln!(f, "[Total Time Elapsed]: {:.4} secs.", duration)?;
-        writeln!(f, "[Start Time]: {}.", start_time)?;
-        writeln!(f, "[End Time]: {}.", end_time)
+        writeln!(f, "{}\n", "TEST RESULTS".bold().yellow())?;
+        writeln!(
+            f,
+            "{}: {}.",
+            "Total Requests Sent".bold(),
+            total_requests.to_string().yellow()
+        )?;
+        writeln!(
+            f,
+            "{}: {}.",
+            "Number of Fails".bold(),
+            self.failed_requests.to_string().red()
+        )?;
+        writeln!(
+            f,
+            "{}: {}.",
+            "Number of Successes".bold(),
+            self.successful_requests.to_string().green()
+        )?;
+        writeln!(
+            f,
+            "{}: {} req/sec.",
+            "Requests per Second".bold(),
+            requests_per_sec.to_string().yellow()
+        )?;
+        writeln!(
+            f,
+            "{}: {:.4} secs.",
+            "Total Time Elapsed".bold(),
+            duration.to_string().yellow()
+        )?;
+        writeln!(
+            f,
+            "{}: {}.",
+            "Start Time".bold(),
+            start_time.to_string().yellow()
+        )?;
+        writeln!(
+            f,
+            "{}: {}.",
+            "End Time".bold(),
+            end_time.to_string().yellow()
+        )?;
+
+        // Printing Results per endpoint.
+
+        let mut table = table!([
+            "Endpoint".bold(),
+            "Error Count".bold().red(),
+            "Success Count".bold().green()
+        ]);
+
+        self.result_cases.iter().for_each(|(_, case)| {
+            table.add_row(row![
+                case.case.endpoint,
+                case.error_count.to_string().red(),
+                case.success_count.to_string().green()
+            ]);
+        });
+
+        writeln!(f, "\n{}\n", "ENDPOINTS".bold().yellow())?;
+        writeln!(f, "{}", table)
     }
 }
 
