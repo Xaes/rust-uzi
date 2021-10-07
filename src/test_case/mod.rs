@@ -20,7 +20,7 @@ impl Case {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TestCase {
     pub name: &'static str,
     pub iterations: u32,

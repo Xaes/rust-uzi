@@ -8,6 +8,10 @@ authors = ["Diego Balmaceda <diego@xaes.dev>"]
 repository = "https://github.com/Xaes/rust-uzi"
 homepage = "https://github.com/Xaes/rust-uzi"
 
+[[bin]]
+name = "rust_uzi_cli"
+path = "./src/cli.rs"
+
 [lib]
 name = "rust_uzi"
 path = "./src/lib.rs"
@@ -15,6 +19,7 @@ test = true
 crate-type = ["lib"]
 
 [dependencies]
+clap = "2.33.3"
 colored = "2.0.0"
 hyper = { version = "0.14.13", features = ["full"] }
 log = "0.4.14"
