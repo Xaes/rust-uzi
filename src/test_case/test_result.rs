@@ -59,18 +59,8 @@ impl Display for TestResult {
             "Total Time Elapsed".bold(),
             duration.to_string().yellow()
         )?;
-        writeln!(
-            f,
-            "{}: {}.",
-            "Start Time".bold(),
-            start_time.to_string().yellow()
-        )?;
-        writeln!(
-            f,
-            "{}: {}.",
-            "End Time".bold(),
-            end_time.to_string().yellow()
-        )?;
+        writeln!(f, "{}: {}.", "Start Time".bold(), start_time.yellow())?;
+        writeln!(f, "{}: {}.", "End Time".bold(), end_time.yellow())?;
 
         // Printing Results per endpoint.
 
@@ -121,7 +111,8 @@ impl TestResultBuilder {
 
     pub fn start(&mut self) {
         self.start_instant = Some(Instant::now());
-        self.start_time = Some(OffsetDateTime::now_local().unwrap_or(OffsetDateTime::now_utc()));
+        self.start_time =
+            Some(OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()));
     }
 
     pub fn register_success(&mut self, case: &Case) {
@@ -163,7 +154,7 @@ impl TestResultBuilder {
 
         TestResult {
             start_time: self.start_time.unwrap(),
-            end_time: OffsetDateTime::now_local().unwrap_or(OffsetDateTime::now_utc()),
+            end_time: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()),
             duration: self.start_instant.unwrap().elapsed(),
             failed_requests: failed_requests_count,
             successful_requests: successful_requests_count,
