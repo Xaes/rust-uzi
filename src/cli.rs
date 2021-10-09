@@ -14,7 +14,6 @@ pub mod test_case;
 
 use colored::*;
 use log::LevelFilter;
-use pretty_env_logger::env_logger;
 use rust_uzi::test_case::{Case, TestCase};
 
 #[tokio::main]
@@ -33,8 +32,9 @@ async fn main() {
 
     if let Some(log_level) = clap.value_of("log") {
         let level: LevelFilter = log_level.parse().unwrap_or(LevelFilter::Off);
-        env_logger::builder().filter_level(level).build();
-        pretty_env_logger::init();
+        pretty_env_logger::env_logger::builder()
+            .filter_module("rust_uzi::test_case", level)
+            .init();
     }
 
     let endpoints = clap.value_of("endpoints").unwrap();
