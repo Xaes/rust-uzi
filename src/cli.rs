@@ -16,7 +16,6 @@ use colored::*;
 use log::LevelFilter;
 use pretty_env_logger::env_logger;
 use rust_uzi::test_case::{Case, TestCase};
-use std::boxed::Box;
 
 #[tokio::main]
 async fn main() {
@@ -32,26 +31,24 @@ async fn main() {
     )
     .get_matches();
 
-    let cli: &'static mut clap::ArgMatches = Box::leak(Box::new(clap));
-
-    if let Some(log_level) = cli.value_of("log") {
+    if let Some(log_level) = clap.value_of("log") {
         let level: LevelFilter = log_level.parse().unwrap_or(LevelFilter::Off);
         env_logger::builder().filter_level(level);
     }
 
-    let endpoints = cli.value_of("endpoints").unwrap();
-    let hostname = cli.value_of("host").unwrap();
-    let iterations: u32 = cli
+    let endpoints = clap.value_of("endpoints").unwrap();
+    let hostname = clap.value_of("host").unwrap();
+    let iterations: u32 = clap
         .value_of("iters")
         .map_or(500, |i| i.parse().unwrap_or(500));
 
-    let mut test_builder = TestCase::builder("test_case").iters(iterations);
+    let mut test_builder = TestCase::builder("test_case".to_string()).iters(iterations);
 
-    for (index, endpoint) in endpoints.split(",").into_iter().enumerate() {
+    for (index, endpoint) in endpoints.split(',').into_iter().enumerate() {
         test_builder = test_builder.case(Case::new(
-            Box::leak(Box::new(format!("case_{}", index))),
-            hostname,
-            endpoint,
+            format!("case_{}", index),
+            hostname.to_string(),
+            endpoint.to_string()
         ));
     }
 

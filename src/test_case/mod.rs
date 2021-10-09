@@ -7,29 +7,29 @@ use std::time::Duration;
 use test_result::{TestResult, TestResultBuilder};
 use tokio::task::JoinHandle;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Case {
-    pub id: &'static str,
-    pub host: &'static str,
-    pub endpoint: &'static str,
+    pub id: String,
+    pub host: String,
+    pub endpoint: String
 }
 
 impl Case {
-    pub fn new(id: &'static str, host: &'static str, endpoint: &'static str) -> Self {
+    pub fn new(id: String, host: String, endpoint: String) -> Self {
         Self { id, host, endpoint }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct TestCase {
-    pub name: &'static str,
+    pub name: String,
     pub iterations: u32,
-    pub cases: HashMap<&'static str, Case>,
+    pub cases: HashMap<String, Case>,
     pub timeout: Duration,
 }
 
 impl<'a> TestCase {
-    pub fn builder(name: &'static str) -> TestCaseBuilder {
+    pub fn builder(name: String) -> TestCaseBuilder {
         TestCaseBuilder::new(name)
     }
 
@@ -47,14 +47,16 @@ impl<'a> TestCase {
         self.cases.iter().for_each(|(_, case)| {
             (0..self.iterations).into_iter().for_each(|run_index| {
                 let client_clone = client.clone();
-                let case_clone = *case;
+                let host = case.host.clone();
+                let case_clone = case.clone();
+                let endpoint = case.endpoint.clone();
                 let timeout_clone = self.timeout;
                 let mut builder_clone = test_builder.clone();
 
                 let uri = Uri::builder()
                     .scheme("http")
-                    .authority(case.host)
-                    .path_and_query(case.endpoint)
+                    .authority(host)
+                    .path_and_query(endpoint)
                     .build()
                     .unwrap();
 
@@ -110,14 +112,14 @@ impl<'a> TestCase {
 
 #[derive(Debug, Default)]
 pub struct TestCaseBuilder {
-    pub name: &'static str,
-    pub cases: HashMap<&'static str, Case>,
+    pub name: String,
+    pub cases: HashMap<String, Case>,
     pub timeout: Duration,
     pub iterations: u32,
 }
 
 impl TestCaseBuilder {
-    pub fn new(name: &'static str) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
             name,
             cases: HashMap::new(),
@@ -132,7 +134,7 @@ impl TestCaseBuilder {
     }
 
     pub fn case(mut self, case: Case) -> Self {
-        self.cases.insert(case.id, case);
+        self.cases.insert(case.id.clone(), case);
         self
     }
 

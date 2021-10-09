@@ -14,7 +14,7 @@ pub struct TestResult {
     pub duration: Duration,
     pub failed_requests: u32,
     pub successful_requests: u32,
-    pub result_cases: HashMap<&'static str, CaseResult>,
+    pub result_cases: HashMap<String, CaseResult>,
 }
 
 impl Display for TestResult {
@@ -59,18 +59,8 @@ impl Display for TestResult {
             "Total Time Elapsed".bold(),
             duration.to_string().yellow()
         )?;
-        writeln!(
-            f,
-            "{}: {}.",
-            "Start Time".bold(),
-            start_time.yellow()
-        )?;
-        writeln!(
-            f,
-            "{}: {}.",
-            "End Time".bold(),
-            end_time.yellow()
-        )?;
+        writeln!(f, "{}: {}.", "Start Time".bold(), start_time.yellow())?;
+        writeln!(f, "{}: {}.", "End Time".bold(), end_time.yellow())?;
 
         // Printing Results per endpoint.
 
@@ -99,7 +89,7 @@ pub struct TestResultBuilder {
     start_time: Option<OffsetDateTime>,
     failed_requests: Arc<Mutex<u32>>,
     successful_requests: Arc<Mutex<u32>>,
-    result_cases: Arc<Mutex<HashMap<&'static str, CaseResult>>>,
+    result_cases: Arc<Mutex<HashMap<String, CaseResult>>>,
 }
 
 impl Default for TestResultBuilder {
@@ -121,7 +111,8 @@ impl TestResultBuilder {
 
     pub fn start(&mut self) {
         self.start_instant = Some(Instant::now());
-        self.start_time = Some(OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()));
+        self.start_time =
+            Some(OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()));
     }
 
     pub fn register_success(&mut self, case: &Case) {
@@ -129,12 +120,12 @@ impl TestResultBuilder {
         let mut result_map = self.result_cases.lock().unwrap();
         *success_number += 1;
         result_map
-            .entry(case.id)
+            .entry(case.id.clone())
             .and_modify(|case| {
                 (*case).success_count += 1;
             })
             .or_insert(CaseResult {
-                case: *case,
+                case: case.clone(),
                 error_count: 0,
                 success_count: 1,
             });
@@ -145,12 +136,12 @@ impl TestResultBuilder {
         let mut result_map = self.result_cases.lock().unwrap();
         *error_number += 1;
         result_map
-            .entry(case.id)
+            .entry(case.id.clone())
             .and_modify(|case| {
                 (*case).error_count += 1;
             })
             .or_insert(CaseResult {
-                case: *case,
+                case: case.clone(),
                 error_count: 1,
                 success_count: 0,
             });
@@ -172,7 +163,7 @@ impl TestResultBuilder {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct CaseResult {
     case: Case,
     error_count: u32,
@@ -182,7 +173,7 @@ pub struct CaseResult {
 impl std::convert::From<&Case> for CaseResult {
     fn from(case: &Case) -> CaseResult {
         CaseResult {
-            case: *case,
+            case: (*case).clone(),
             error_count: 0,
             success_count: 0,
         }

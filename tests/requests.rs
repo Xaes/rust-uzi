@@ -7,10 +7,22 @@ use std::net::SocketAddr;
 use warp::Filter;
 
 fn get_case() -> TestCase {
-    TestCase::builder("test_case")
-        .case(Case::new("first_case", "0.0.0.0:8000", "/all-success"))
-        .case(Case::new("second_case", "0.0.0.0:8000", "/all-denied"))
-        .case(Case::new("third_case", "0.0.0.0:8000", "/mixed"))
+    TestCase::builder("test_case".to_string())
+        .case(Case::new(
+            "first_case".to_string(),
+            "0.0.0.0:8000".to_string(),
+            "/all-success".to_string(),
+        ))
+        .case(Case::new(
+            "second_case".to_string(),
+            "0.0.0.0:8000".to_string(),
+            "/all-denied".to_string(),
+        ))
+        .case(Case::new(
+            "third_case".to_string(),
+            "0.0.0.0:8000".to_string(),
+            "/mixed".to_string(),
+        ))
         .iters(500)
         .build()
 }
