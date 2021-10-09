@@ -6,7 +6,7 @@ on:
 
 jobs:
   release:
-    name: release ${{ matrix.target }}
+    name: Release ${{ matrix.target }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -14,7 +14,7 @@ jobs:
         include:
           - target: x86_64-pc-windows-gnu
             archive: zip
-          - target: x86_64-unknown-linux-musl
+          - target: x86_64-unknown-linux-gnu
             archive: tar.gz tar.xz
           - target: x86_64-apple-darwin
             archive: zip
