@@ -1,6 +1,7 @@
 mod test_result;
 
 use hyper::{Client, Uri};
+use hyper_tls::HttpsConnector;
 use std::collections::HashMap;
 use std::default::Default;
 use std::time::Duration;
@@ -10,20 +11,24 @@ use tokio::task::JoinHandle;
 #[derive(Debug, Clone)]
 pub struct Case {
     pub id: String,
-    pub host: String,
-    pub endpoint: String
+    pub endpoint: String,
+    pub iters: u32,
 }
 
 impl Case {
-    pub fn new(id: String, host: String, endpoint: String) -> Self {
-        Self { id, host, endpoint }
+    pub fn new(id: String, endpoint: String, iters: u32) -> Self {
+        Self {
+            id,
+            endpoint,
+            iters,
+        }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct TestCase {
     pub name: String,
-    pub iterations: u32,
+    pub hostname: String,
     pub cases: HashMap<String, Case>,
     pub timeout: Duration,
 }
@@ -34,8 +39,10 @@ impl<'a> TestCase {
     }
 
     pub async fn run(self) -> TestResult {
-        let client = Client::new();
-        let mut test_builder = TestResultBuilder::new();
+        let https = self.hostname.starts_with("https");
+        let https_connector = HttpsConnector::new();
+        let client = Client::builder().build::<_, hyper::Body>(https_connector);
+        let mut test_builder = TestResultBuilder::new(self.hostname.clone());
         let mut tasks: Vec<JoinHandle<()>> = Vec::new();
 
         // Initializing Test Benchmark.
@@ -45,17 +52,19 @@ impl<'a> TestCase {
         // Spawning Tasks.
 
         self.cases.iter().for_each(|(_, case)| {
-            (0..self.iterations).into_iter().for_each(|run_index| {
+            (0..case.iters).into_iter().for_each(|run_index| {
                 let client_clone = client.clone();
-                let host = case.host.clone();
                 let case_clone = case.clone();
                 let endpoint = case.endpoint.clone();
                 let timeout_clone = self.timeout;
+                let hostname = self.hostname.clone();
                 let mut builder_clone = test_builder.clone();
+                let authority =
+                    hostname[hostname.find("//").map(|v| v + 2).unwrap_or(0)..].to_string();
 
                 let uri = Uri::builder()
-                    .scheme("http")
-                    .authority(host)
+                    .scheme(if https { "https" } else { "http" })
+                    .authority(authority)
                     .path_and_query(endpoint)
                     .build()
                     .unwrap();
@@ -115,16 +124,15 @@ pub struct TestCaseBuilder {
     pub name: String,
     pub cases: HashMap<String, Case>,
     pub timeout: Duration,
-    pub iterations: u32,
+    pub hostname: String,
 }
 
 impl TestCaseBuilder {
     pub fn new(name: String) -> Self {
         Self {
             name,
-            cases: HashMap::new(),
             timeout: Duration::from_secs(15),
-            iterations: 300,
+            ..Default::default()
         }
     }
 
@@ -138,8 +146,8 @@ impl TestCaseBuilder {
         self
     }
 
-    pub fn iters(mut self, iters: u32) -> Self {
-        self.iterations = iters;
+    pub fn host(mut self, hostname: String) -> Self {
+        self.hostname = hostname;
         self
     }
 
@@ -148,7 +156,7 @@ impl TestCaseBuilder {
             name: self.name,
             timeout: self.timeout,
             cases: self.cases,
-            iterations: self.iterations,
+            hostname: self.hostname,
         }
     }
 }

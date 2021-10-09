@@ -24,8 +24,8 @@ async fn main() {
         (about: crate_description!())
         (version: crate_version!())
         (author: crate_authors!())
-        (@arg log: -l --log ... "Sets the level of log information")
-        (@arg iters: -i --iters ... "Sets quantity of requests that will be made per endpoint")
+        (@arg log: -l --log [LOG_LEVEL] "Sets the level of log information")
+        (@arg iters: -i --iters [ITERS] "Sets quantity of requests that will be made per endpoint")
         (@arg host: +required "Address of the API you wish to test")
         (@arg endpoints: +required "Endpoints of the API separated by commas")
     )
@@ -33,7 +33,8 @@ async fn main() {
 
     if let Some(log_level) = clap.value_of("log") {
         let level: LevelFilter = log_level.parse().unwrap_or(LevelFilter::Off);
-        env_logger::builder().filter_level(level);
+        env_logger::builder().filter_level(level).build();
+        pretty_env_logger::init();
     }
 
     let endpoints = clap.value_of("endpoints").unwrap();
@@ -42,13 +43,13 @@ async fn main() {
         .value_of("iters")
         .map_or(500, |i| i.parse().unwrap_or(500));
 
-    let mut test_builder = TestCase::builder("test_case".to_string()).iters(iterations);
+    let mut test_builder = TestCase::builder("test_case".to_string()).host(hostname.to_string());
 
     for (index, endpoint) in endpoints.split(',').into_iter().enumerate() {
         test_builder = test_builder.case(Case::new(
             format!("case_{}", index),
-            hostname.to_string(),
-            endpoint.to_string()
+            endpoint.to_string(),
+            iterations,
         ));
     }
 

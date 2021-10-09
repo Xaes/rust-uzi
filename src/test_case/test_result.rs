@@ -9,6 +9,7 @@ use time::{format_description, OffsetDateTime};
 
 #[derive(Debug)]
 pub struct TestResult {
+    pub hostname: String,
     pub start_time: OffsetDateTime,
     pub end_time: OffsetDateTime,
     pub duration: Duration,
@@ -29,6 +30,7 @@ impl Display for TestResult {
         // Printing Results.
 
         writeln!(f, "{}\n", "TEST RESULTS".bold().yellow())?;
+        writeln!(f, "{}: {}.", "Hostname".bold(), self.hostname)?;
         writeln!(
             f,
             "{}: {}.",
@@ -85,6 +87,7 @@ impl Display for TestResult {
 
 #[derive(Debug, Clone)]
 pub struct TestResultBuilder {
+    hostname: String,
     start_instant: Option<Instant>,
     start_time: Option<OffsetDateTime>,
     failed_requests: Arc<Mutex<u32>>,
@@ -95,6 +98,7 @@ pub struct TestResultBuilder {
 impl Default for TestResultBuilder {
     fn default() -> Self {
         TestResultBuilder {
+            hostname: "".to_string(),
             failed_requests: Arc::new(Mutex::new(0)),
             successful_requests: Arc::new(Mutex::new(0)),
             start_instant: None,
@@ -105,8 +109,11 @@ impl Default for TestResultBuilder {
 }
 
 impl TestResultBuilder {
-    pub fn new() -> Self {
-        TestResultBuilder::default()
+    pub fn new(hostname: String) -> Self {
+        TestResultBuilder { 
+            hostname,
+            ..Default::default()
+        }
     }
 
     pub fn start(&mut self) {
@@ -153,6 +160,7 @@ impl TestResultBuilder {
         let result_map = &*self.result_cases.lock().unwrap();
 
         TestResult {
+            hostname: self.hostname,
             start_time: self.start_time.unwrap(),
             end_time: OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc()),
             duration: self.start_instant.unwrap().elapsed(),
