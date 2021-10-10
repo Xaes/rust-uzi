@@ -1,10 +1,30 @@
 extern crate rust_uzi;
 
-use futures::channel::oneshot::channel;
+use futures::channel::oneshot::{channel, Sender};
 use rand::Rng;
 use rust_uzi::test_case::{Case, TestCase};
 use std::net::SocketAddr;
+use std::sync::Once;
 use warp::Filter;
+
+static INIT: Once = Once::new();
+
+fn before_tests() {
+    INIT.call_once(|| {
+        pretty_env_logger::init();
+    })
+}
+
+fn spawn_test_server(addr: &'static str) -> Sender<()> {
+    let (shutdown_sender, shutdown_receiver) = channel::<()>();
+    let address: SocketAddr = addr.parse().unwrap();
+    let (_, server_future) =
+        warp::serve(get_routes()).bind_with_graceful_shutdown(address, async {
+            shutdown_receiver.await.ok();
+        });
+    tokio::spawn(server_future);
+    shutdown_sender
+}
 
 fn get_case() -> TestCase {
     let default_iters = 1000;
@@ -55,34 +75,18 @@ fn get_routes() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejecti
 
 #[tokio::test(flavor = "multi_thread")]
 async fn multi_thread_api_test() {
-    pretty_env_logger::init();
-    let (shutdown_sender, shutdown_receiver) = channel::<()>();
-    let address: SocketAddr = "0.0.0.0:8000".parse().unwrap();
-    let (_, server_future) =
-        warp::serve(get_routes()).bind_with_graceful_shutdown(address, async {
-            shutdown_receiver.await.ok();
-        });
-
-    tokio::spawn(server_future);
-
+    before_tests();
+    let shutdown_signal = spawn_test_server("0.0.0.0:8001");
     let result = get_case().run().await;
-    shutdown_sender.send(()).unwrap();
+    shutdown_signal.send(()).unwrap();
     println!("{}", result);
 }
 
 #[tokio::test]
 async fn single_thread_api_test() {
-    pretty_env_logger::init();
-    let (shutdown_sender, shutdown_receiver) = channel::<()>();
-    let address: SocketAddr = "0.0.0.0:8000".parse().unwrap();
-    let (_, server_future) =
-        warp::serve(get_routes()).bind_with_graceful_shutdown(address, async {
-            shutdown_receiver.await.ok();
-        });
-
-    tokio::spawn(server_future);
-
+    before_tests();
+    let shutdown_signal = spawn_test_server("0.0.0.0:8000");
     let result = get_case().run().await;
-    shutdown_sender.send(()).unwrap();
+    shutdown_signal.send(()).unwrap();
     println!("{}", result);
 }

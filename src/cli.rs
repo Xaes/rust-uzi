@@ -18,17 +18,15 @@ use rust_uzi::test_case::{Case, TestCase};
 use tokio::runtime::Builder as RuntimeBuilder;
 
 fn main() {
-    // Building CLI args.
-
     let clap = clap_app!(UZI =>
         (name: "UZI".bold().red().to_string())
         (about: crate_description!())
         (version: crate_version!())
         (author: crate_authors!())
-        (@arg log: -l --log [LOG_LEVEL] "Sets the level of log information")
-        (@arg iters: -i --iters [ITERS] "Sets quantity of requests that will be made per endpoint. If no iterations are specified 500 iterations will be used instead")
-        (@arg host: +required "Address of the API you wish to test")
-        (@arg endpoints: +required "Endpoints of the API separated by commas")
+        (@arg host: +required "Address of the API you wish to test.")
+        (@arg endpoints: +required "Endpoints of the API separated by commas. For example: '/todos, '/users'.")
+        (@arg log: -l --log [LOG_LEVEL] "Sets the level of log information.")
+        (@arg iters: -i --iters [ITERS] "Sets quantity of requests that will be made per endpoint. If no iterations are specified 500 iterations will be used instead.")
         (@arg threads: -t --threads [THREADS] "Sets the quantity of threads that the loading test will run with. If the thread parameter is equal to one, then the task will be executed on a single thread.")
     )
     .get_matches();
@@ -58,7 +56,7 @@ fn main() {
     for (index, endpoint) in endpoints.split(',').into_iter().enumerate() {
         test_builder = test_builder.case(Case::new(
             format!("case_{}", index),
-            endpoint.to_string(),
+            endpoint.trim().to_string(),
             iterations,
         ));
     }
