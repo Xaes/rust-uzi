@@ -69,3 +69,20 @@ async fn multi_thread_api_test() {
     shutdown_sender.send(()).unwrap();
     println!("{}", result);
 }
+
+#[tokio::test]
+async fn single_thread_api_test() {
+    pretty_env_logger::init();
+    let (shutdown_sender, shutdown_receiver) = channel::<()>();
+    let address: SocketAddr = "0.0.0.0:8000".parse().unwrap();
+    let (_, server_future) =
+        warp::serve(get_routes()).bind_with_graceful_shutdown(address, async {
+            shutdown_receiver.await.ok();
+        });
+
+    tokio::spawn(server_future);
+
+    let result = get_case().run().await;
+    shutdown_sender.send(()).unwrap();
+    println!("{}", result);
+}

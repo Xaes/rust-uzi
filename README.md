@@ -8,7 +8,8 @@ A load testing tool for API's made in Rust for measuring Web API's performance. 
 
 ## Features
 
-- Multi-threaded HTTP Request.
+- Multi-threaded or Single-threaded HTTP Requests.
+- Run by tests cases by time or by iterations.
 - Metrics Analysis and comparation.
 - Query Builder.
 - Fake Data insertion.
@@ -22,4 +23,16 @@ A simple concurrent test is already implemented. The test consists on creating a
 
 ```bash
 RUST_LOG="rust_uzi::test_case=info,warp:test=info" cargo test multi_thread_api_test -- --nocapture
+```
+
+If you don't wanna to execute with logs you may want to use:
+
+```bash
+cargo test multi_thread_api_test -- --nocapture
+```
+
+There is a single threaded test as well. You can execute it with:
+
+```bash
+cargo test single_thread_api_test -- --nocapture
 ```
